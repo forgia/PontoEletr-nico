@@ -1,0 +1,194 @@
+public class FuncionarioDao {
+    
+    private Connection connection;
+    
+
+    public FuncionarioDao(){//Construtor 
+       this.connection = new ConnectionBd().getConnection();
+    }
+
+public void adiciona(Funcionario funcionario){
+String sql = "INSERT INTO tab_funcionario(nome,senha,cargo,salario) VALUES(?,?,?,?)";
+try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                
+                
+                 stmt.setString(1,funcionario.getNome());
+                 stmt.setString(2,funcionario.getSenha());
+                 stmt.setString(3, funcionario.getCargo());
+                 stmt.setDouble(4, funcionario.getSalario());
+                 stmt.execute(); 
+}
+catch (SQLException excecao) {
+            throw new RuntimeException(excecao);
+                   }   
+
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+public ArrayList<Funcionario> nomesFuncionario()  {  
+        
+    String sql = "SELECT id_funcionario, nome FROM tab_funcionario ";  
+    
+    ArrayList<Funcionario> lista = new ArrayList<Funcionario>();  
+        
+        
+       try {
+    PreparedStatement stmt = connection.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery();  
+        
+        if (rs != null) {
+        while(rs.next()){  
+            Funcionario funcionario = new Funcionario();  
+            
+            funcionario.setCod(rs.getInt(1));
+            funcionario.setNome(rs.getString(2));
+            lista.add(funcionario);  
+        } 
+        return lista;
+        
+        }else{
+        return null;
+    }
+    }catch(SQLException excecao) {
+            throw new RuntimeException(excecao);
+
+        }  
+
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+public ArrayList<Ponto> buscarTodosPontos(int idFuncionario){
+		
+               int ultimoId = getLastId(idFuncionario);
+               String sql = "select id_ponto,status,data from tab_ponto where id_ponto = "+ultimoId+"";
+
+                ArrayList<Ponto> lista = new ArrayList<Ponto>();
+                
+                try {
+    PreparedStatement stmt = connection.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery();  
+        
+        if (rs != null) {
+        while(rs.next()){  
+             
+            
+            Ponto ponto = new Ponto();
+            ponto.setIdPonto(rs.getInt(1));
+            ponto.setStatus(rs.getString(2));
+            ponto.setData(rs.getString(3));
+            lista.add(ponto);  
+        } 
+        return lista;
+        
+        }else{
+        return null;
+    }
+    }catch(SQLException excecao) {
+            throw new RuntimeException(excecao);
+
+        }  	
+
+}
+
+
+
+////////////////////////////////////////////////
+
+public boolean consultarLogin(String login, String senha){
+
+    boolean autenticado = false;
+    String sql;
+    sql = "select id_funcionario, nome, senha,status from tab_funcionario where nome LIKE '%"+login+"%' AND senha LIKE '%"+senha+"%'";  
+   
+  
+    try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            
+  
+            ResultSet rs;  
+            rs = stmt.executeQuery();  
+  
+            if(rs.next()) {  
+                
+                
+                //int idBanco = rs.getInt("id_funcionario");  
+                //String statusBanco = rs.getString("status");  
+                autenticado = true; 
+            } 
+  
+            stmt.close();
+         return autenticado;   
+    }
+    catch(SQLException excecao) {
+            throw new RuntimeException(excecao);  
+        }  
+  
+           
+}
+
+///////////////////////////////////////////////
+
+public void preencheEntrada(Ponto ponto){
+
+
+String sql="INSERT INTO tab_ponto(hr_entrada,data,status,id_funcionario) VALUES (?,?,?,?)"; 
+
+try(PreparedStatement stmt = connection.prepareStatement(sql)){
+                 
+                 stmt.setString(1,ponto.getHrEntrada());
+                 stmt.setString(2,ponto.getData());
+                 stmt.setString(3,ponto.getStatus());
+                 stmt.setInt(4,ponto.getIdFuncionario());
+                 stmt.execute(); 
+
+}catch (SQLException excecao) {
+            throw new RuntimeException(excecao);
+                   }
+    
+                   }
+
+
+//////////////////////////////////////////////////////////////
+
+
+public void preencheSaida(Ponto ponto){
+
+    String sql = "UPDATE tab_ponto SET hr_saida = ?, status = ? WHERE id_ponto = ?"; 
+
+   try(PreparedStatement stmt = connection.prepareStatement(sql)){
+                 
+       stmt.setString(1, ponto.getHrSaida());
+       stmt.setString(2, ponto.getStatus());
+       stmt.setInt(3, ponto.getIdPonto());
+       stmt.execute();
+       stmt.close();
+   
+   }catch (SQLException excecao) {
+            throw new RuntimeException(excecao);
+                   }
+}
+
+//////////////////////////////////////////////////
+
+public int getLastId(int idFuncionario){ 
+
+ Ponto ponto = new Ponto();   
+ String sql = "SELECT MAX(id_ponto) as id_ponto FROM tab_ponto where id_funcionario =  "+idFuncionario+""; 
+try(PreparedStatement stmt = (PreparedStatement) connection.prepareStatement(sql)){ 
+ResultSet rs = stmt.executeQuery(); 
+rs.next(); 
+int id = rs.getInt("id_ponto");
+
+rs.close(); 
+stmt.close(); 
+return id;
+}
+    
+catch (SQLException excecao) {
+            throw new RuntimeException(excecao);
+                   }
+} 
+
+}
+
